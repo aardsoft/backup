@@ -1,0 +1,33 @@
+#!/bin/bash
+# A backup profile might look like this:
+# TARGET=/srv/backup/algo
+# doRotate /Target1
+# doBackup /backup/source/Target1 Target1
+# doRotate /Target2
+# doBackup /backup/source/Target1 Target2
+#
+# Source pathnames are always relative to TARGET
+
+if ((BASH_VERSINFO[0] < 4)); then
+    echo "Bash version >= 4 required"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <backup-configuration>"
+    exit 1
+fi
+
+if ! [ -f "$1" ]; then
+    echo "Configuration file $0 not found"
+    exit 1
+fi
+
+if [ `id -u` -ne 0 ]; then
+    echo "Must be run as UID 0"
+    exit 1
+fi
+
+. /etc/as-backup/functions
+
+. "$1"

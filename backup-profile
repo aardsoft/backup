@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if ((BASH_VERSINFO[0] < 4)); then
+    echo "Bash version >= 4 required"
+    exit 1
+fi
+
+_PROFILE=$1
+
+if [ -z "$_PROFILE" ]; then
+    echo "Usage: $0 profile"
+    exit 1
+fi
+
+. /etc/as-backup/functions
+trap doCleanup INT TERM EXIT
+
+loadConfig
+loadProfile $_PROFILE
+validateProfile
+
+if [ -n "$SOURCE_SRC" ]; then
+    echo "Mount $SOURCE_SRC"
+    grep -q $SOURCE_SRC /proc/mounts
+    if [ $? -eq 0 ]; then
+        echo "Volume for $_PROFILE already mounted, exiting"
+        exit 1
+    fi
+
+    MNT_SRC=$SOURCE_SRC MNT_PATH=$SOURCE_PATH MNT_OPTS=$SOURCE_OPTS MNT_FSTYPE=$SOURCE_FSTYPE doMount
+    if [ $? -ne 0 ]; then
+        echo "Mount failed on profile $_PROFILE"
+        exit 1
+    fi
+fi
+
+doRotate /$PROFILE_NAME
+doBackup $BACKUP_SOURCE $PROFILE_NAME
